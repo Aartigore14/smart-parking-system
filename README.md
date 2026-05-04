@@ -40,6 +40,6 @@ A modern web-based Smart Parking System for Pune malls.
 ![Ticket](Output(Screenshots)/ticket.png)
 
 ### ⚙️ Admin Dashboard
-![Admin]((Output(Screenshots)/Admin.png)
+![Admin](Output(Screenshots)/Admin.png)
 ## Developed by
 Aarti Gore © 2026
