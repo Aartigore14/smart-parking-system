@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Home</title>
+<link rel="stylesheet" href="style.css">
+<style>
+
+/* ── Hero banner ── */
+.hero {
+  background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(255,101,132,0.08));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 40px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hero-text h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.hero-text h2 span {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-text p { color: var(--muted); font-size: 14px; }
+
+/* ── Stats row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+@media(max-width: 700px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-card .num {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-card .lbl {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Booking cards ── */
+.booking-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  transition: all 0.25s;
+}
+
+.booking-card:hover {
+  border-color: rgba(108,99,255,0.3);
+  transform: translateX(4px);
+}
+
+.booking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.booking-id {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.booking-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.meta-item { font-size: 13px; color: var(--muted); }
+.meta-item strong { color: var(--text); display: block; font-size: 14px; }
+
+.cancel-area textarea {
+  width: 100%;
+  height: 70px;
+  resize: none;
+  font-size: 13px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+
+.empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+
+.user-pill {
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface2);
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  background: var(--surface);
+  letter-spacing: 0.3px;
+}
+
+.footer span {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+</style>
+</head>
+<body>
+
+<script>
+  if (!localStorage.getItem("currentUser")) window.location.href = "login.html";
+</script>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="logo" href="home.html">
+    <img src="images/logo.png" alt="Logo">
+    <span>SmartPark</span>
+  </a>
+  <div class="navbar-actions">
+    <span class="user-pill" id="userPill">👤</span>
+    <button class="btn btn-ghost" onclick="location.href='home.html'">Home</button>
+    <button class="btn btn-danger" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="page-wrap">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-text">
+      <h2>Welcome back, <span id="userName">User</span> 👋</h2>
+      <p>Manage your parking bookings and find available slots.</p>
+    </div>
+    <button class="btn btn-gold" onclick="location.href='malls.html'"
+      style="font-size:15px; padding:14px 28px;">
+      + Book New Parking
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">Total Bookings</div></div>
+    <div class="stat-card"><div class="num" id="statActive">0</div><div class="lbl">Active</div></div>
+    <div class="stat-card"><div class="num" id="statCancelled">0</div><div class="lbl">Cancelled</div></div>
+    <div class="stat-card"><div class="num" id="statSpent">₹0</div><div class="lbl">Total Spent</div></div>
+  </div>
+
+  <!-- Active Bookings -->
+  <div class="section-title">🚗 Active Bookings</div>
+  <div id="activeBookings"></div>
+
+  <!-- Cancelled Bookings -->
+  <div class="section-title" style="margin-top:36px;">❌ Cancelled Bookings</div>
+  <div id="cancelledBookings"></div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+
+<script>
+const currentUser = localStorage.getItem("currentUser");
+document.getElementById("userPill").textContent  = "👤 " + currentUser;
+document.getElementById("userName").textContent  = currentUser.split("@")[0];
+
+let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+
+function renderAll() {
+  bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+  const mine = bookings.filter(b => b.user === currentUser);
+
+  // Stats
+  const total     = mine.length;
+  const active    = mine.filter(b => b.status === "Booked").length;
+  const cancelled = mine.filter(b => b.status === "Cancelled").length;
+  const spent     = mine.filter(b => b.status === "Booked")
+                        .reduce((s, b) => s + (b.amount || 0), 0);
+
+  document.getElementById("statTotal").textContent     = total;
+  document.getElementById("statActive").textContent    = active;
+  document.getElementById("statCancelled").textContent = cancelled;
+  document.getElementById("statSpent").textContent     = "₹" + spent;
+
+  // Active bookings
+  let activeHTML = "";
+  mine.filter(b => b.status === "Booked").forEach(b => {
+    const realIdx = bookings.findIndex(x => x.id === b.id);
+    activeHTML += `
+    <div class="booking-card">
+      <div class="booking-header">
+        <div class="booking-id">🎫 ${b.id}</div>
+        <span class="badge badge-green">● Active</span>
+      </div>
+      <div class="booking-meta">
+        <div class="meta-item"><strong>🏢 ${b.mall}</strong>Mall</div>
+        <div class="meta-item"><strong>📅 ${b.date}</strong>Date</div>
+        <div class="meta-item"><strong>🕐 ${b.time}:00–${parseInt(b.time)+1}:00</strong>Time</div>
+        <div class="meta-item"><strong>🚗 ${b.vehicle}</strong>Vehicle</div>
+        <div class="meta-item"><strong>🅿️ ${(b.slots||[]).join(", ")}</strong>Slots</div>
+        <div class="meta-item"><strong>💰 ₹${b.amount}</strong>Paid</div>
+      </div>
+      <div class="cancel-area">
+        <textarea id="reason${realIdx}" placeholder="Reason for cancellation (required)"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-danger" onclick="cancelBooking(${realIdx})">Cancel Booking</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById("activeBookings").innerHTML =
+    activeHTML || `<div class="empty-state"><div class="emoji">🚗</div><p>No active bookings. Book your parking now!</p></div>`;
+
+  // Cancelled bookings
+  let cancelHTML = "";
+  mine.filter(b => b.status === "Cancelled").forEach(b => {
+    const realIdx = bookings.findIndex(x => x.id === b.id);
+    cancelHTML += `
+    <div class="booking-card" style="border-color:rgba(239,35,60,0.15);">
+      <div class="booking-header">
+        <div class="booking-id">🎫 ${b.id}</div>
+        <span class="badge badge-red">● Cancelled</span>
+      </div>
+      <div class="booking-meta">
+        <div class="meta-item"><strong>${b.mall}</strong>Mall</div>
+        <div class="meta-item"><strong>₹${b.amount}</strong>Amount</div>
+        <div class="meta-item"><strong>${b.cancelReason || "—"}</strong>Reason</div>
+        <div class="meta-item"><strong>${b.refundStatus || "Pending"}</strong>Refund</div>
+      </div>
+      ${b.refundStatus !== "Refunded"
+        ? `<button class="btn btn-green" onclick="processRefund(${realIdx})">Process Refund</button>`
+        : `<span class="badge badge-green">✓ Refunded</span>`}
+    </div>`;
+  });
+
+  document.getElementById("cancelledBookings").innerHTML =
+    cancelHTML || `<div class="empty-state"><div class="emoji">✨</div><p>No cancelled bookings.</p></div>`;
+}
+
+function cancelBooking(index) {
+  const reason = document.getElementById("reason" + index).value.trim();
+  if (!reason) { alert("Please enter a cancellation reason"); return; }
+  bookings[index].status       = "Cancelled";
+  bookings[index].cancelReason = reason;
+  bookings[index].refundStatus = "Pending";
+  localStorage.setItem("bookings", JSON.stringify(bookings));
+  showToast("Booking cancelled successfully");
+  renderAll();
+}
+
+function processRefund(index) {
+  bookings[index].refundStatus = "Refunded";
+  localStorage.setItem("bookings", JSON.stringify(bookings));
+  showToast("✅ Refund processed!");
+  renderAll();
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  window.location.href = "login.html";
+}
+
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.className   = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+renderAll();
+</script>
+
+</body>
+</html>

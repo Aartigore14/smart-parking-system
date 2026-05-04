@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Select Mall</title>
+<link rel="stylesheet" href="style.css">
+<style>
+
+.page-hero {
+  text-align: center;
+  padding: 40px 20px 10px;
+}
+
+.page-hero h2 {
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-hero p {
+  color: var(--muted);
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+/* ── Grid ─────────────────────────────────── */
+.malls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 30px 40px 60px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+/* ── Card: image fills entire card, text overlaid ── */
+.mall-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  height: 300px;               /* fixed height — image fills this */
+  border: 1px solid var(--border);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.mall-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 24px 60px rgba(108,99,255,0.3);
+}
+
+/* The actual image — fills the whole card */
+.mall-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;           /* crops to fill, no distortion */
+  object-position: center;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.mall-card:hover img {
+  transform: scale(1.06);      /* subtle zoom on hover */
+}
+
+/* Dark gradient overlay so text is always readable */
+.mall-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.05)  0%,
+    rgba(0,0,0,0.25) 40%,
+    rgba(0,0,0,0.80) 75%,
+    rgba(0,0,0,0.92) 100%
+  );
+  transition: background 0.35s;
+}
+
+.mall-card:hover .mall-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.1)  0%,
+    rgba(0,0,0,0.30) 40%,
+    rgba(0,0,0,0.85) 75%,
+    rgba(0,0,0,0.95) 100%
+  );
+}
+
+/* Text sits above the overlay */
+.mall-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 22px;
+  z-index: 2;
+}
+
+.mall-info h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.mall-info p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 14px;
+}
+
+.mall-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-tag {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.slots-tag {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+.book-btn {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  background: rgba(108,99,255,0.75);
+  border: 1px solid rgba(108,99,255,0.6);
+  padding: 7px 16px;
+  border-radius: 99px;
+  backdrop-filter: blur(6px);
+  transition: all 0.25s;
+}
+
+.mall-card:hover .book-btn {
+  background: var(--accent);
+  box-shadow: 0 4px 16px rgba(108,99,255,0.5);
+}
+
+/* Top badge (slots count) */
+.mall-top-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 99px;
+}
+
+</style>
+</head>
+<body>
+
+<script>
+  if (!localStorage.getItem("currentUser")) window.location.href = "login.html";
+</script>
+
+<nav class="navbar">
+  <a class="logo" href="home.html">
+    <img src="images/logo.png" alt="Logo">
+    <span>SmartPark</span>
+  </a>
+  <div class="navbar-actions">
+    <button class="btn btn-ghost" onclick="location.href='home.html'">← Home</button>
+    <button class="btn btn-danger" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <h2>Choose Your Mall</h2>
+  <p>Select a parking location to book your slot</p>
+</div>
+
+<div class="malls-grid">
+
+  <!-- Phoenix Mall of the Millennium -->
+  <div class="mall-card" onclick="selectMall('Phoenix Mall of the Millennium')">
+    <img src="images/phoenix-mall-of-the-millennium.jpg"
+         alt="Phoenix Mall of the Millennium"
+         onerror="this.style.display='none'">
+    <div class="mall-overlay"></div>
+    <div class="mall-top-badge">🅿️ 50 Slots</div>
+    <div class="mall-info">
+      <h3>Phoenix Mall of the Millennium</h3>
+      <p>Premium multi-level parking facility</p>
+      <div class="mall-footer-row">
+        <div>
+          <div class="price-tag">₹40–50 / slot</div>
+          <div class="slots-tag">50 total slots</div>
+        </div>
+        <div class="book-btn">Book Now →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ElPro City Square Mall -->
+  <div class="mall-card" onclick="selectMall('ElPro City Square Mall')">
+    <img src="images/elpro.jpg.jpeg"
+         alt="ElPro City Square Mall"
+         onerror="this.style.display='none'">
+    <div class="mall-overlay"></div>
+    <div class="mall-top-badge">🅿️ 40 Slots</div>
+    <div class="mall-info">
+      <h3>ElPro City Square Mall</h3>
+      <p>Secure open-air parking available</p>
+      <div class="mall-footer-row">
+        <div>
+          <div class="price-tag">₹30–40 / slot</div>
+          <div class="slots-tag">40 total slots</div>
+        </div>
+        <div class="book-btn">Book Now →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phoenix Market City Pune -->
+  <div class="mall-card" onclick="selectMall('Phoenix Market City Pune')">
+    <img src="images/phoenix-marketcity.jpeg"
+         alt="Phoenix Market City Pune"
+         onerror="this.style.display='none'">
+    <div class="mall-overlay"></div>
+    <div class="mall-top-badge">🅿️ 60 Slots</div>
+    <div class="mall-info">
+      <h3>Phoenix Market City Pune</h3>
+      <p>Largest smart parking facility</p>
+      <div class="mall-footer-row">
+        <div>
+          <div class="price-tag">₹50–60 / slot</div>
+          <div class="slots-tag">60 total slots</div>
+        </div>
+        <div class="book-btn">Book Now →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Amanora Mall -->
+  <div class="mall-card" onclick="selectMall('Amanora Mall')">
+    <img src="images/amanora.jpg.jpeg"
+         alt="Amanora Mall"
+         onerror="this.style.display='none'">
+    <div class="mall-overlay"></div>
+    <div class="mall-top-badge">🅿️ 40 Slots</div>
+    <div class="mall-info">
+      <h3>Amanora Mall</h3>
+      <p>Easy access underground parking</p>
+      <div class="mall-footer-row">
+        <div>
+          <div class="price-tag">₹30–40 / slot</div>
+          <div class="slots-tag">40 total slots</div>
+        </div>
+        <div class="book-btn">Book Now →</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+<script>
+function selectMall(mallName) {
+  localStorage.setItem("selectedMall", mallName);
+  window.location.href = "booking-details.html";
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  window.location.href = "login.html";
+}
+</script>
+</body>
+</html>

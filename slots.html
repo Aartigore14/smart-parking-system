@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Select Slot</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.slots-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media(max-width:900px) {
+  .slots-layout { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+
+.info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.legend {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.dot.available { background: #06d6a0; }
+.dot.booked    { background: #ef233c; }
+.dot.selected  { background: #ffd166; }
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+}
+
+@media(max-width:600px) {
+  .slot-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.slot {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.slot.available {
+  background: rgba(6,214,160,0.12);
+  color: var(--green);
+  border-color: rgba(6,214,160,0.25);
+}
+.slot.available:hover {
+  background: rgba(6,214,160,0.25);
+  transform: scale(1.08);
+}
+
+.slot.booked {
+  background: rgba(239,35,60,0.1);
+  color: var(--red);
+  border-color: rgba(239,35,60,0.2);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.slot.selected {
+  background: rgba(255,209,102,0.15);
+  color: var(--gold);
+  border-color: var(--gold);
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(255,209,102,0.3);
+}
+
+.summary-panel h3 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.summary-row:last-of-type { border-bottom: none; }
+.summary-row .val { font-weight: 600; color: var(--text); }
+
+.total-row {
+  background: rgba(108,99,255,0.1);
+  border: 1px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-row .label  { font-size: 14px; color: var(--muted); }
+.total-row .amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.selected-slots-display {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  min-height: 44px;
+}
+
+.avail-count { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.avail-count strong { color: var(--green); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="logo" href="home.html"><img src="images/logo.png" alt="Logo"><span>SmartPark</span></a>
+  <button class="btn btn-ghost" onclick="history.back()" style="margin-left:auto">← Back</button>
+</nav>
+
+<div class="page-wrap">
+  <h2 style="font-size:28px; margin-bottom:6px;">Select Parking Slot</h2>
+  <p style="color:var(--muted); margin-bottom:24px; font-size:14px;">Tap available slots to select them</p>
+
+  <div class="info-bar" id="infoBadges"></div>
+
+  <div class="slots-layout">
+
+    <!-- LEFT: Slot Grid -->
+    <div class="panel">
+      <div class="legend">
+        <div class="legend-item"><div class="dot available"></div> Available</div>
+        <div class="legend-item"><div class="dot booked"></div> Booked</div>
+        <div class="legend-item"><div class="dot selected"></div> Selected</div>
+      </div>
+      <div class="avail-count" id="availCount"></div>
+      <div class="slot-grid" id="slotGrid"></div>
+    </div>
+
+    <!-- RIGHT: Summary -->
+    <div class="summary-panel panel">
+      <h3>🧾 Booking Summary</h3>
+      <div class="summary-row"><span>Mall</span>     <span class="val" id="sMall"></span></div>
+      <div class="summary-row"><span>Date</span>     <span class="val" id="sDate"></span></div>
+      <div class="summary-row"><span>Time</span>     <span class="val" id="sTime"></span></div>
+      <div class="summary-row"><span>Vehicle</span>  <span class="val" id="sVehicle"></span></div>
+      <div class="summary-row"><span>Price/Slot</span><span class="val" id="sPrice"></span></div>
+
+      <div class="selected-slots-display" id="sSlots">No slots selected</div>
+
+      <div class="total-row">
+        <span class="label">Total Amount</span>
+        <span class="amount" id="sTotal">₹0</span>
+      </div>
+
+      <button
+        class="btn btn-primary"
+        id="payBtn"
+        style="width:100%; justify-content:center; padding:15px; font-size:16px; display:none;"
+        onclick="proceedPayment()">
+        Proceed to Payment →
+      </button>
+    </div>
+
+  </div>
+</div>
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+
+
+<script>
+// Read localStorage
+const mall    = localStorage.getItem("selectedMall") || "";
+const vehicle = localStorage.getItem("vehicle")      || "";
+const date    = localStorage.getItem("date")         || "";
+const time    = localStorage.getItem("time")         || "";
+
+// Info badges
+document.getElementById("infoBadges").innerHTML = `
+  <span class="badge badge-purple">🏢 ${mall}</span>
+  <span class="badge badge-purple">📅 ${date}</span>
+  <span class="badge badge-purple">🕐 ${time}:00–${parseInt(time)+1}:00</span>
+  <span class="badge badge-purple">🚗 ${vehicle}</span>
+`;
+
+// Summary sidebar
+document.getElementById("sMall").textContent    = mall;
+document.getElementById("sDate").textContent    = date;
+document.getElementById("sTime").textContent    = `${time}:00–${parseInt(time)+1}:00`;
+document.getElementById("sVehicle").textContent = vehicle;
+
+// Price per slot
+const lm = mall.toLowerCase();
+let basePrice = 40;
+if      (lm.includes("millennium")) basePrice = vehicle === "Two Wheeler" ? 40 : 50;
+else if (lm.includes("elpro"))      basePrice = vehicle === "Two Wheeler" ? 30 : 40;
+else if (lm.includes("market"))     basePrice = vehicle === "Two Wheeler" ? 50 : 60;
+else if (lm.includes("amanora"))    basePrice = vehicle === "Two Wheeler" ? 30 : 40;
+
+document.getElementById("sPrice").textContent = `₹${basePrice}`;
+
+// Slot data
+const key      = `${mall}_${date}_${time}_${vehicle}`;
+let   data     = JSON.parse(localStorage.getItem("slots"))    || {};
+let   bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+if (!data[key]) data[key] = [];
+
+let selectedSlots    = [];
+const totalSlots     = 40;
+
+function isCancelled(slot) {
+  return bookings.some(b =>
+    b.mall    === mall    &&
+    b.date    === date    &&
+    b.time    === time    &&
+    b.vehicle === vehicle &&
+    b.slots?.includes(slot) &&
+    b.status  === "Cancelled"
+  );
+}
+
+// Available count
+const bookedSlots = data[key].filter(s => !isCancelled(s));
+document.getElementById("availCount").innerHTML =
+  `<strong>${totalSlots - bookedSlots.length}</strong> slots available out of ${totalSlots}`;
+
+// Build slot grid
+const grid = document.getElementById("slotGrid");
+
+for (let i = 1; i <= totalSlots; i++) {
+  const div       = document.createElement("div");
+  div.textContent = i;
+  div.className   = "slot";
+
+  if (data[key].includes(i) && !isCancelled(i)) {
+    div.classList.add("booked");
+  } else {
+    div.classList.add("available");
+    div.onclick = () => {
+      if (div.classList.contains("available")) {
+        div.classList.replace("available", "selected");
+        selectedSlots.push(i);
+      } else {
+        div.classList.replace("selected", "available");
+        selectedSlots = selectedSlots.filter(s => s !== i);
+      }
+      updateSummary();
+    };
+  }
+
+  grid.appendChild(div);
+}
+
+// Update summary panel
+function updateSummary() {
+  const total = basePrice * selectedSlots.length;
+  document.getElementById("sSlots").textContent =
+    selectedSlots.length ? "Slots: " + selectedSlots.join(", ") : "No slots selected";
+  document.getElementById("sTotal").textContent = `₹${total}`;
+  document.getElementById("payBtn").style.display =
+    selectedSlots.length ? "flex" : "none";
+}
+
+// Proceed to payment
+function proceedPayment() {
+  data[key] = data[key].concat(selectedSlots);
+  localStorage.setItem("slots",         JSON.stringify(data));
+  localStorage.setItem("totalAmount",   basePrice * selectedSlots.length);
+  localStorage.setItem("selectedSlots", JSON.stringify(selectedSlots));
+  window.location.href = "payment.html";
+}
+</script>
+
+</body>
+</html>

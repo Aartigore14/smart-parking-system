@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Payment</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body { min-height: 100vh; }
+
+.pay-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media(max-width:900px) {
+  .pay-layout { grid-template-columns: 1fr; }
+}
+
+.pay-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+}
+
+/* Method Tabs */
+.method-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.method-tab {
+  flex: 1;
+  min-width: 100px;
+  padding: 14px 10px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.25s;
+}
+
+.method-tab:hover { border-color: var(--accent); color: var(--text); }
+
+.method-tab.active {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.12);
+  color: var(--accent);
+}
+
+.method-tab .tab-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+
+.pay-section { display: none; }
+.pay-section.active { display: block; }
+
+/* UPI Section */
+.upi-apps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.upi-app {
+  padding: 14px 6px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upi-app:hover { border-color: var(--accent); transform: translateY(-3px); }
+.upi-app.active { border-color: var(--accent); background: rgba(108,99,255,0.12); }
+.upi-app .app-icon { font-size: 26px; display: block; margin-bottom: 4px; }
+.upi-app .app-name { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+/* QR Box */
+.qr-box {
+  border: 2px dashed rgba(108,99,255,0.3);
+  border-radius: var(--radius);
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 20px;
+  background: rgba(108,99,255,0.04);
+}
+
+.qr-svg { margin: 0 auto 12px; display: block; }
+
+.qr-amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.qr-hint { font-size: 12px; color: var(--muted); }
+
+.upi-divider { margin: 20px 0; }
+
+/* Card Section */
+.card-preview {
+  background: linear-gradient(135deg, #1e3c72, #6c63ff);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-preview::before {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+  top: -60px;
+  right: -60px;
+}
+
+.card-chip { font-size: 32px; margin-bottom: 20px; display: block; }
+.card-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+  color: rgba(255,255,255,0.85);
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-meta .val { color: white; font-weight: 700; display: block; font-size: 14px; margin-top: 2px; }
+
+/* Order Summary */
+.order-panel {}
+
+.order-panel h3 {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.order-row .val { color: var(--text); font-weight: 600; font-size: 13px; text-align: right; max-width: 55%; }
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(255,101,132,0.08));
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(108,99,255,0.2);
+}
+
+.order-total .label { font-size: 14px; color: var(--muted); }
+.order-total .amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.secure-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(6,214,160,0.08);
+  border: 1px solid rgba(6,214,160,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--green);
+  margin: 16px 0;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  position: relative;
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal .big-icon { font-size: 64px; display: block; margin-bottom: 16px; }
+.modal h3 { font-size: 22px; margin-bottom: 8px; }
+.modal p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="logo" href="home.html"><img src="images/logo.png" alt="Logo"><span>SmartPark</span></a>
+  <button class="btn btn-ghost" onclick="history.back()" style="margin-left:auto">← Back to Slots</button>
+</nav>
+
+<div class="page-wrap">
+  <h2 style="font-size:28px; margin-bottom:6px;">Complete Payment</h2>
+  <p style="color:var(--muted); margin-bottom:28px; font-size:14px;">Choose a payment method to confirm your booking</p>
+
+  <div class="pay-layout">
+
+    <!-- Left: Payment Methods -->
+    <div class="pay-panel">
+      <div class="method-tabs">
+        <div class="method-tab active" onclick="switchMethod('upi')">
+          <span class="tab-icon">📱</span>UPI
+        </div>
+        <div class="method-tab" onclick="switchMethod('qr')">
+          <span class="tab-icon">📷</span>QR Code
+        </div>
+        <div class="method-tab" onclick="switchMethod('card')">
+          <span class="tab-icon">💳</span>Card
+        </div>
+      </div>
+
+      <!-- UPI Section -->
+      <div class="pay-section active" id="upiSection">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Select your UPI app</p>
+        <div class="upi-apps">
+          <div class="upi-app active" onclick="selectApp(this)"><span class="app-icon">📗</span><span class="app-name">PhonePe</span></div>
+          <div class="upi-app" onclick="selectApp(this)"><span class="app-icon">💛</span><span class="app-name">Google Pay</span></div>
+          <div class="upi-app" onclick="selectApp(this)"><span class="app-icon">💙</span><span class="app-name">Paytm</span></div>
+          <div class="upi-app" onclick="selectApp(this)"><span class="app-icon">🟠</span><span class="app-name">BHIM</span></div>
+        </div>
+
+        <div class="input-group">
+          <label>Your UPI ID</label>
+          <input type="text" id="upiId" placeholder="e.g. name@upi or 9876543210@paytm">
+        </div>
+
+        <div class="secure-badge">🔒 Your UPI ID is used for refund processing only</div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:15px;font-size:16px;" onclick="processUPI()">
+          Pay ₹<span id="upiPayAmt">0</span> via UPI
+        </button>
+      </div>
+
+      <!-- QR Section -->
+      <div class="pay-section" id="qrSection">
+        <div class="qr-box">
+          <svg class="qr-svg" width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- QR Code Pattern (decorative) -->
+            <rect width="180" height="180" fill="#1c1c28" rx="12"/>
+            <!-- Corner squares -->
+            <rect x="12" y="12" width="44" height="44" rx="4" fill="none" stroke="#6c63ff" stroke-width="5"/>
+            <rect x="20" y="20" width="28" height="28" rx="2" fill="#6c63ff"/>
+            <rect x="124" y="12" width="44" height="44" rx="4" fill="none" stroke="#6c63ff" stroke-width="5"/>
+            <rect x="132" y="20" width="28" height="28" rx="2" fill="#6c63ff"/>
+            <rect x="12" y="124" width="44" height="44" rx="4" fill="none" stroke="#6c63ff" stroke-width="5"/>
+            <rect x="20" y="132" width="28" height="28" rx="2" fill="#6c63ff"/>
+            <!-- Data modules -->
+            <rect x="70" y="12" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="82" y="12" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="94" y="12" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="70" y="24" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="94" y="24" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="82" y="36" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="70" y="48" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="94" y="48" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="12" y="70" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="24" y="70" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="36" y="82" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="12" y="94" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="36" y="94" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="12" y="106" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="24" y="106" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <!-- Center data -->
+            <rect x="70" y="70" width="40" height="40" rx="4" fill="rgba(108,99,255,0.15)" stroke="#6c63ff" stroke-width="2"/>
+            <text x="90" y="96" text-anchor="middle" fill="#6c63ff" font-size="18">🅿️</text>
+            <!-- More modules -->
+            <rect x="124" y="70" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="136" y="70" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="160" y="82" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="124" y="94" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="148" y="94" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="124" y="124" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="136" y="136" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="160" y="124" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="148" y="136" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="160" y="148" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="124" y="160" width="8" height="8" fill="#6c63ff" rx="1"/>
+            <rect x="148" y="160" width="8" height="8" fill="#6c63ff" rx="1"/>
+          </svg>
+          <div class="qr-amount">₹<span id="qrAmt">0</span></div>
+          <div class="qr-hint">Scan with any UPI app (PhonePe, GPay, Paytm...)</div>
+        </div>
+
+        <div class="input-group">
+          <label>Your UPI ID (for refunds)</label>
+          <input type="text" id="qrUpiId" placeholder="yourname@upi">
+        </div>
+
+        <button class="btn btn-green" style="width:100%;justify-content:center;padding:15px;font-size:16px;" onclick="processQR()">
+          ✓ I've Completed Payment
+        </button>
+      </div>
+
+      <!-- Card Section -->
+      <div class="pay-section" id="cardSection">
+        <div class="card-preview">
+          <span class="card-chip">💳</span>
+          <div class="card-num" id="cardNumDisplay">•••• •••• •••• ••••</div>
+          <div class="card-meta">
+            <div>Card Holder<span class="val" id="cardHolderDisplay">YOUR NAME</span></div>
+            <div>Expires<span class="val" id="cardExpiryDisplay">MM/YY</span></div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Cardholder Name</label>
+          <input type="text" id="cardName" placeholder="Name as on card" oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+          <label>Card Number</label>
+          <input type="text" id="cardNum" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard()">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="input-group">
+            <label>Expiry Date</label>
+            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiry()">
+          </div>
+          <div class="input-group">
+            <label>CVV</label>
+            <input type="password" id="cardCvv" placeholder="•••" maxlength="3">
+          </div>
+        </div>
+
+        <div class="secure-badge">🔒 256-bit encrypted · PCI-DSS compliant (Demo)</div>
+
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:15px;font-size:16px;" onclick="processCard()">
+          Pay ₹<span id="cardPayAmt">0</span> Securely
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Order Summary -->
+    <div class="pay-panel order-panel">
+      <h3>🧾 Order Summary</h3>
+      <div class="order-row"><span>Mall</span><span class="val" id="oMall">—</span></div>
+      <div class="order-row"><span>Date</span><span class="val" id="oDate">—</span></div>
+      <div class="order-row"><span>Time Slot</span><span class="val" id="oTime">—</span></div>
+      <div class="order-row"><span>Vehicle</span><span class="val" id="oVehicle">—</span></div>
+      <div class="order-row"><span>Slots Selected</span><span class="val" id="oSlots">—</span></div>
+      <div class="order-row"><span>Price / Slot</span><span class="val" id="oPrice">—</span></div>
+
+      <div class="order-total">
+        <span class="label">Total Payable</span>
+        <span class="amount" id="oTotal">₹0</span>
+      </div>
+
+      <div class="secure-badge" style="margin-top:8px;">🛡️ Booking confirmed instantly on payment</div>
+    </div>
+  </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal-overlay" id="processingModal">
+  <div class="modal">
+    <div class="spinner"></div>
+    <h3>Processing Payment...</h3>
+    <p>Please wait, do not close this page</p>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <span class="big-icon">✅</span>
+    <h3>Payment Successful!</h3>
+    <p>Your parking slot has been confirmed. Redirecting to your ticket...</p>
+  </div>
+</div>
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+<script>
+const mall = localStorage.getItem("selectedMall") || "";
+const vehicle = localStorage.getItem("vehicle") || "";
+const date = localStorage.getItem("date") || "";
+const time = localStorage.getItem("time") || "";
+const amount = parseInt(localStorage.getItem("totalAmount")) || 0;
+const slots = JSON.parse(localStorage.getItem("selectedSlots")) || [];
+
+// Populate
+document.getElementById("oMall").textContent = mall;
+document.getElementById("oDate").textContent = date;
+document.getElementById("oTime").textContent = `${time}:00–${parseInt(time)+1}:00`;
+document.getElementById("oVehicle").textContent = vehicle;
+document.getElementById("oSlots").textContent = slots.join(", ") || "—";
+
+const lm = mall.toLowerCase();
+let basePrice = 40;
+if (lm.includes("millennium")) basePrice = vehicle === "Two Wheeler" ? 40 : 50;
+else if (lm.includes("elpro")) basePrice = vehicle === "Two Wheeler" ? 30 : 40;
+else if (lm.includes("market")) basePrice = vehicle === "Two Wheeler" ? 50 : 60;
+else if (lm.includes("amanora")) basePrice = vehicle === "Two Wheeler" ? 30 : 40;
+
+document.getElementById("oPrice").textContent = `₹${basePrice}`;
+document.getElementById("oTotal").textContent = `₹${amount}`;
+document.getElementById("upiPayAmt").textContent = amount;
+document.getElementById("qrAmt").textContent = amount;
+document.getElementById("cardPayAmt").textContent = amount;
+
+// Method switching
+function switchMethod(method) {
+  document.querySelectorAll(".method-tab").forEach((t, i) => {
+    t.classList.toggle("active", ["upi","qr","card"][i] === method);
+  });
+  document.querySelectorAll(".pay-section").forEach((s, i) => {
+    s.classList.toggle("active", ["upiSection","qrSection","cardSection"][i] === method + "Section");
+  });
+}
+
+// UPI app selection
+function selectApp(el) {
+  document.querySelectorAll(".upi-app").forEach(a => a.classList.remove("active"));
+  el.classList.add("active");
+}
+
+// Card preview
+function updatePreview() {
+  const name = document.getElementById("cardName").value;
+  document.getElementById("cardHolderDisplay").textContent = name.toUpperCase() || "YOUR NAME";
+}
+
+function formatCard() {
+  let v = document.getElementById("cardNum").value.replace(/\D/g, "").slice(0, 16);
+  document.getElementById("cardNum").value = v.replace(/(.{4})/g, "$1 ").trim();
+  const display = v.padEnd(16, "•");
+  document.getElementById("cardNumDisplay").textContent = display.replace(/(.{4})/g, "$1 ").trim();
+}
+
+function formatExpiry() {
+  let v = document.getElementById("cardExpiry").value.replace(/\D/g, "").slice(0, 4);
+  if (v.length >= 2) v = v.slice(0,2) + "/" + v.slice(2);
+  document.getElementById("cardExpiry").value = v;
+  document.getElementById("cardExpiryDisplay").textContent = v || "MM/YY";
+}
+
+// Payment processing
+function showProcessing() {
+  document.getElementById("processingModal").classList.add("show");
+}
+
+function showSuccess() {
+  document.getElementById("processingModal").classList.remove("show");
+  document.getElementById("successModal").classList.add("show");
+  setTimeout(() => window.location.href = "ticket.html", 2000);
+}
+
+function confirmBooking(upiId) {
+  const bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+  const newBooking = {
+    id: "SP" + Date.now(),
+    user: localStorage.getItem("currentUser"),
+    mall, date, time, vehicle,
+    slots,
+    amount,
+    userUpi: upiId || "—",
+    status: "Booked",
+    paymentStatus: "Paid",
+    bookingDate: Date.now()
+  };
+  bookings.push(newBooking);
+  localStorage.setItem("bookings", JSON.stringify(bookings));
+}
+
+function processUPI() {
+  const upiId = document.getElementById("upiId").value.trim();
+  if (!upiId) { alert("Please enter your UPI ID"); return; }
+  if (!upiId.includes("@")) { alert("Enter a valid UPI ID (e.g. name@upi)"); return; }
+  showProcessing();
+  setTimeout(() => {
+    confirmBooking(upiId);
+    showSuccess();
+  }, 2000);
+}
+
+function processQR() {
+  const upiId = document.getElementById("qrUpiId").value.trim();
+  showProcessing();
+  setTimeout(() => {
+    confirmBooking(upiId || "QR Payment");
+    showSuccess();
+  }, 1500);
+}
+
+function processCard() {
+  const num = document.getElementById("cardNum").value.replace(/\s/g, "");
+  const expiry = document.getElementById("cardExpiry").value;
+  const cvv = document.getElementById("cardCvv").value;
+  const name = document.getElementById("cardName").value.trim();
+  if (!name) { alert("Enter cardholder name"); return; }
+  if (num.length < 16) { alert("Enter a valid 16-digit card number"); return; }
+  if (expiry.length < 5) { alert("Enter valid expiry date"); return; }
+  if (cvv.length < 3) { alert("Enter valid CVV"); return; }
+  showProcessing();
+  setTimeout(() => {
+    confirmBooking("Card Payment");
+    showSuccess();
+  }, 2500);
+}
+</script>
+</body>
+</html>

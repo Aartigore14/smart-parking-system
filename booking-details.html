@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Book Details</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body { display: flex; flex-direction: column; min-height: 100vh; }
+
+.booking-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.booking-box {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+
+.mall-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(108,99,255,0.1);
+  border: 1px solid rgba(108,99,255,0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+}
+.mall-badge .icon { font-size: 24px; }
+.mall-badge .name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+.mall-badge .sub  { font-size: 12px; color: var(--muted); }
+
+/* ── Date field trigger ── */
+.date-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border 0.2s;
+  user-select: none;
+}
+.date-field:hover, .date-field.open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+.date-field .placeholder { color: var(--muted); }
+.date-field .cal-icon { font-size: 18px; opacity: 0.6; }
+
+/* ── Calendar popup ── */
+.cal-popup {
+  display: none;
+  position: absolute;
+  z-index: 200;
+  width: 100%;
+  background: #1e1e2e;
+  border: 1px solid rgba(108,99,255,0.35);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  margin-top: 6px;
+}
+.cal-popup.show { display: block; }
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+.cal-title:hover { color: var(--accent); }
+
+.cal-nav {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.cal-nav:hover { background: var(--accent); border-color: var(--accent); }
+
+/* Day names row */
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.cal-day-name {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+}
+
+/* Date cells */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text);
+}
+
+.cal-cell:hover:not(.disabled):not(.empty) {
+  background: rgba(108,99,255,0.2);
+  color: var(--accent);
+}
+
+.cal-cell.today {
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cal-cell.selected {
+  background: var(--accent);
+  color: white !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(108,99,255,0.4);
+}
+
+.cal-cell.disabled {
+  color: rgba(255,255,255,0.15);
+  cursor: not-allowed;
+}
+
+.cal-cell.empty { cursor: default; }
+
+/* Month/Year picker view */
+.cal-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.month-cell {
+  padding: 10px;
+  text-align: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface2);
+  transition: all 0.2s;
+}
+.month-cell:hover  { background: rgba(108,99,255,0.2); color: var(--accent); }
+.month-cell.active { background: var(--accent); color: white; }
+
+/* Vehicle buttons */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.v-btn {
+  padding: 20px 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+}
+.v-btn:hover { border-color: var(--accent); }
+.v-btn.active {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.15);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+.v-btn .emoji { font-size: 28px; display: block; margin-bottom: 6px; }
+
+.price-preview {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.price-preview .amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.btn-full {
+  width: 100%;
+  padding: 15px;
+  justify-content: center;
+  font-size: 16px;
+  margin-top: 24px;
+}
+
+.step-indicator { display: flex; gap: 6px; margin-bottom: 28px; }
+.step { flex: 1; height: 3px; border-radius: 99px; background: var(--border); }
+.step.done { background: var(--accent); }
+
+.date-wrap { position: relative; }
+</style>
+</head>
+<body>
+
+<script>
+  if (!localStorage.getItem("selectedMall")) window.location.href = "malls.html";
+</script>
+
+<nav class="navbar">
+  <a class="logo" href="home.html">
+    <img src="images/logo.png" alt="Logo">
+    <span>SmartPark</span>
+  </a>
+  <button class="btn btn-ghost" onclick="history.back()" style="margin-left:auto">← Back</button>
+</nav>
+
+<div class="booking-wrap">
+  <div class="booking-box">
+
+    <div class="step-indicator">
+      <div class="step done"></div>
+      <div class="step done"></div>
+      <div class="step"></div>
+      <div class="step"></div>
+    </div>
+
+    <h2 style="margin-bottom:6px; font-size:24px;">Book Parking</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Fill in your parking details</p>
+
+    <!-- Mall badge -->
+    <div class="mall-badge">
+      <div class="icon">🏢</div>
+      <div>
+        <div class="name" id="mallName"></div>
+        <div class="sub">Selected Mall</div>
+      </div>
+    </div>
+
+    <!-- Date picker -->
+    <div class="input-group">
+      <label>Select Date</label>
+      <div class="date-wrap">
+        <div class="date-field" id="dateTrigger" onclick="toggleCal()">
+          <span id="dateDisplay" class="placeholder">Click to pick a date</span>
+          <span class="cal-icon">📅</span>
+        </div>
+        <div class="cal-popup" id="calPopup">
+
+          <!-- Calendar header -->
+          <div class="cal-header">
+            <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+            <div class="cal-title" id="calTitle" onclick="toggleMonthView()"></div>
+            <button class="cal-nav" onclick="changeMonth(1)">›</button>
+          </div>
+
+          <!-- Day view -->
+          <div id="dayView">
+            <div class="cal-days-header">
+              <div class="cal-day-name">Su</div>
+              <div class="cal-day-name">Mo</div>
+              <div class="cal-day-name">Tu</div>
+              <div class="cal-day-name">We</div>
+              <div class="cal-day-name">Th</div>
+              <div class="cal-day-name">Fr</div>
+              <div class="cal-day-name">Sa</div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+
+          <!-- Month picker view (hidden by default) -->
+          <div id="monthView" style="display:none;">
+            <div class="cal-month-grid" id="monthGrid"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Time slot -->
+    <div class="input-group">
+      <label>Select Time Slot</label>
+      <select id="time">
+        <option value="">-- Choose a time --</option>
+      </select>
+    </div>
+
+    <!-- Vehicle type -->
+    <div class="input-group">
+      <label>Vehicle Type</label>
+      <div class="vehicle-grid">
+        <div class="v-btn" onclick="selectVehicle('Two Wheeler', this)">
+          <span class="emoji">🛵</span>Two Wheeler
+        </div>
+        <div class="v-btn" onclick="selectVehicle('Four Wheeler', this)">
+          <span class="emoji">🚗</span>Four Wheeler
+        </div>
+      </div>
+    </div>
+
+    <div class="price-preview" id="pricePreview" style="display:none;">
+      <span>Price per slot</span>
+      <span class="amount" id="priceAmt"></span>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="continueBooking()">Continue to Slots →</button>
+  </div>
+</div>
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+<script>
+// ── Mall name ───────────────────────────────────────────────────
+const mall = localStorage.getItem("selectedMall");
+document.getElementById("mallName").textContent = mall;
+
+// ── Time slots ──────────────────────────────────────────────────
+const timeSelect = document.getElementById("time");
+for (let i = 8; i < 23; i++) {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.text  = `${i}:00 – ${i+1}:00`;
+  timeSelect.appendChild(opt);
+}
+
+// ── Calendar state ──────────────────────────────────────────────
+const today      = new Date();
+today.setHours(0,0,0,0);
+let viewYear     = today.getFullYear();
+let viewMonth    = today.getMonth();       // 0-11
+let selectedDate = null;                   // Date object
+let monthViewOpen = false;
+
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+
+// ── Toggle calendar open/close ──────────────────────────────────
+function toggleCal() {
+  const popup   = document.getElementById("calPopup");
+  const trigger = document.getElementById("dateTrigger");
+  const isOpen  = popup.classList.contains("show");
+  popup.classList.toggle("show", !isOpen);
+  trigger.classList.toggle("open", !isOpen);
+  if (!isOpen) renderDayView();
+}
+
+// Close calendar when clicking outside
+document.addEventListener("click", e => {
+  const wrap = document.querySelector(".date-wrap");
+  if (!wrap.contains(e.target)) {
+    document.getElementById("calPopup").classList.remove("show");
+    document.getElementById("dateTrigger").classList.remove("open");
+  }
+});
+
+// ── Render day grid ─────────────────────────────────────────────
+function renderDayView() {
+  document.getElementById("calTitle").textContent =
+    MONTHS[viewMonth] + " " + viewYear;
+
+  const grid      = document.getElementById("calGrid");
+  grid.innerHTML  = "";
+
+  const firstDay  = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement("div");
+    blank.className = "cal-cell empty";
+    grid.appendChild(blank);
+  }
+
+  // Date cells
+  for (let d = 1; d <= daysInMon; d++) {
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const cell     = document.createElement("div");
+    cell.className = "cal-cell";
+    cell.textContent = d;
+
+    const isPast = cellDate < today;
+    const isToday = cellDate.getTime() === today.getTime();
+    const isSelected = selectedDate &&
+      cellDate.getTime() === selectedDate.getTime();
+
+    if (isPast) {
+      cell.classList.add("disabled");
+    } else {
+      if (isToday)    cell.classList.add("today");
+      if (isSelected) cell.classList.add("selected");
+
+      cell.onclick = () => {
+        selectedDate = cellDate;
+
+        // Format display
+        const dd   = String(d).padStart(2, "0");
+        const mm   = String(viewMonth + 1).padStart(2, "0");
+        const yyyy = viewYear;
+        const displayStr = `${dd} ${MONTHS[viewMonth].slice(0,3)} ${yyyy}`;
+
+        document.getElementById("dateDisplay").textContent = displayStr;
+        document.getElementById("dateDisplay").classList.remove("placeholder");
+
+        // Re-render to update selected highlight
+        renderDayView();
+
+        // Close calendar after a short delay
+        setTimeout(() => {
+          document.getElementById("calPopup").classList.remove("show");
+          document.getElementById("dateTrigger").classList.remove("open");
+        }, 150);
+      };
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+// ── Month navigation ────────────────────────────────────────────
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  renderDayView();
+}
+
+// ── Month picker view ───────────────────────────────────────────
+function toggleMonthView() {
+  monthViewOpen = !monthViewOpen;
+  document.getElementById("dayView").style.display   = monthViewOpen ? "none" : "block";
+  document.getElementById("monthView").style.display = monthViewOpen ? "block" : "none";
+
+  if (monthViewOpen) {
+    const grid = document.getElementById("monthGrid");
+    grid.innerHTML = "";
+    MONTHS.forEach((m, i) => {
+      const cell = document.createElement("div");
+      cell.className = "month-cell" + (i === viewMonth ? " active" : "");
+      cell.textContent = m.slice(0, 3);
+      cell.onclick = () => {
+        viewMonth = i;
+        monthViewOpen = false;
+        document.getElementById("dayView").style.display   = "block";
+        document.getElementById("monthView").style.display = "none";
+        renderDayView();
+      };
+      grid.appendChild(cell);
+    });
+  }
+}
+
+// Initial render
+renderDayView();
+
+// ── Vehicle & price ─────────────────────────────────────────────
+let selectedVehicle = "";
+const prices = {
+  "millennium": { tw: 40, fw: 50 },
+  "elpro":      { tw: 30, fw: 40 },
+  "market":     { tw: 50, fw: 60 },
+  "amanora":    { tw: 30, fw: 40 }
+};
+
+function getPrice(vehicle) {
+  const lm  = mall.toLowerCase();
+  const key = lm.includes("millennium") ? "millennium"
+            : lm.includes("elpro")      ? "elpro"
+            : lm.includes("market")     ? "market"
+            : "amanora";
+  return prices[key][vehicle === "Two Wheeler" ? "tw" : "fw"];
+}
+
+function selectVehicle(type, el) {
+  selectedVehicle = type;
+  document.querySelectorAll(".v-btn").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("pricePreview").style.display = "flex";
+  document.getElementById("priceAmt").textContent = "₹" + getPrice(type) + " / slot";
+}
+
+// ── Continue booking ─────────────────────────────────────────────
+function continueBooking() {
+  const time = document.getElementById("time").value;
+
+  if (!selectedDate) {
+    alert("Please select a date");
+    return;
+  }
+  if (!time) {
+    alert("Please select a time slot");
+    return;
+  }
+  if (!selectedVehicle) {
+    alert("Please select a vehicle type");
+    return;
+  }
+
+  // Save date as YYYY-MM-DD for consistency
+  const yyyy = selectedDate.getFullYear();
+  const mm   = String(selectedDate.getMonth() + 1).padStart(2, "0");
+  const dd   = String(selectedDate.getDate()).padStart(2, "0");
+  localStorage.setItem("date",    `${yyyy}-${mm}-${dd}`);
+  localStorage.setItem("time",    time);
+  localStorage.setItem("vehicle", selectedVehicle);
+
+  window.location.href = "slots.html";
+}
+</script>
+</body>
+</html>

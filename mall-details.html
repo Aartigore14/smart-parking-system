@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Mall Slot Management</title>
+<link rel="stylesheet" href="style.css">
+<style>
+
+/* ── Page layout: push footer to bottom always ── */
+html, body { height: 100%; }
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-wrap { flex: 1; }  /* this grows to fill space, pushing footer down */
+
+/* ── Filter panel ── */
+.filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 20px;
+  align-items: end;
+}
+
+@media(max-width: 700px) {
+  .filter-panel { grid-template-columns: 1fr; }
+}
+
+/* ── Summary tiles ── */
+.summary-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.summary-tile {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.summary-tile:hover {
+  border-color: var(--green-border);
+  transform: translateY(-3px);
+}
+
+.summary-tile .num {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.summary-tile .lbl {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ── Booking cards ── */
+.booking-admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  transition: all 0.25s;
+}
+
+.booking-admin-card:hover {
+  border-color: var(--green-border);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-info { font-size: 14px; line-height: 2; }
+.booking-info strong { color: var(--text); font-weight: 600; }
+.booking-info span   { color: var(--muted); }
+
+/* ── Date field trigger ── */
+.date-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+.date-field:hover, .date-field.open {
+  border-color: var(--green-fresh);
+  box-shadow: 0 0 0 3px var(--green-glow);
+}
+
+.date-field .placeholder { color: var(--muted); }
+.date-field .cal-icon { font-size: 18px; opacity: 0.7; }
+
+/* ── Calendar popup ── */
+.cal-popup {
+  display: none;
+  position: absolute;
+  z-index: 300;
+  width: 300px;
+  background: #1a2640;
+  border: 1px solid var(--green-border);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  margin-top: 6px;
+  left: 0;
+}
+
+.cal-popup.show { display: block; }
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+  transition: color 0.2s;
+}
+.cal-title:hover { color: var(--green-fresh); }
+
+.cal-nav {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.cal-nav:hover {
+  background: var(--green-deep);
+  border-color: var(--green-fresh);
+}
+
+/* Day names */
+.cal-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.cal-day-name {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 4px 0;
+}
+
+/* Date cells */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text);
+}
+
+.cal-cell:hover:not(.disabled):not(.empty) {
+  background: var(--green-glow);
+  color: var(--green-light);
+}
+
+.cal-cell.today {
+  border: 1.5px solid var(--green-fresh);
+  color: var(--green-fresh);
+  font-weight: 700;
+}
+
+.cal-cell.selected {
+  background: var(--green-deep) !important;
+  color: white !important;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(46,125,50,0.45);
+}
+
+.cal-cell.disabled {
+  color: rgba(255,255,255,0.15);
+  cursor: not-allowed;
+}
+
+.cal-cell.empty { cursor: default; }
+
+/* Month grid view */
+.cal-month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.month-cell {
+  padding: 9px 6px;
+  text-align: center;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sec);
+  background: var(--surface2);
+  transition: all 0.2s;
+}
+.month-cell:hover  { background: var(--green-glow); color: var(--green-light); }
+.month-cell.active { background: var(--green-deep); color: white; }
+
+.date-wrap { position: relative; }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  letter-spacing: 0.3px;
+  margin-top: 0;
+}
+
+.footer span {
+  color: var(--green-fresh);
+  font-weight: 600;
+}
+
+</style>
+</head>
+<body>
+
+<script>
+  if (localStorage.getItem("role") !== "admin") window.location.href = "login.html";
+</script>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a class="logo" href="admin.html">
+    <img src="images/logo.png" alt="Logo">
+    <span>SmartPark Admin</span>
+  </a>
+  <div class="navbar-actions">
+    <button class="btn btn-ghost" onclick="location.href='admin.html'">← Dashboard</button>
+    <button class="btn btn-danger" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="page-wrap">
+<div style="max-width:1200px; margin:0 auto; padding:36px 24px;">
+
+  <!-- Page heading -->
+  <div style="margin-bottom:28px;">
+    <h2 style="font-size:26px; font-weight:800; display:flex; align-items:center; gap:10px;">
+      🏢 <span id="mallTitle">Slot Management</span>
+    </h2>
+    <p style="color:var(--muted); font-size:14px; margin-top:6px;">
+      View and manage bookings for this mall
+    </p>
+  </div>
+
+  <!-- Filter panel -->
+  <div class="filter-panel">
+
+    <!-- Date picker -->
+    <div class="input-group" style="margin:0;">
+      <label>Select Date</label>
+      <div class="date-wrap">
+        <div class="date-field" id="dateTrigger" onclick="toggleCal()">
+          <span id="dateDisplay" class="placeholder">Click to pick a date</span>
+          <span class="cal-icon">📅</span>
+        </div>
+
+        <div class="cal-popup" id="calPopup">
+          <div class="cal-header">
+            <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+            <div class="cal-title" id="calTitle" onclick="toggleMonthView()"></div>
+            <button class="cal-nav" onclick="changeMonth(1)">›</button>
+          </div>
+
+          <!-- Day view -->
+          <div id="dayView">
+            <div class="cal-days-header">
+              <div class="cal-day-name">Su</div>
+              <div class="cal-day-name">Mo</div>
+              <div class="cal-day-name">Tu</div>
+              <div class="cal-day-name">We</div>
+              <div class="cal-day-name">Th</div>
+              <div class="cal-day-name">Fr</div>
+              <div class="cal-day-name">Sa</div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+
+          <!-- Month picker view -->
+          <div id="monthView" style="display:none;">
+            <div class="cal-month-grid" id="monthGrid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vehicle type -->
+    <div class="input-group" style="margin:0;">
+      <label>Vehicle Type</label>
+      <select id="vehicleType">
+        <option value="Two Wheeler">🛵 Two Wheeler</option>
+        <option value="Four Wheeler">🚗 Four Wheeler</option>
+      </select>
+    </div>
+
+    <!-- Check button -->
+    <button class="btn btn-primary" onclick="checkSlots()"
+      style="padding:13px 28px; font-size:15px; white-space:nowrap;">
+      Check Slots
+    </button>
+
+  </div>
+
+  <!-- Summary tiles (hidden until search) -->
+  <div class="summary-row" id="summaryRow" style="display:none;"></div>
+
+  <!-- Booking list -->
+  <div id="bookingArea"></div>
+
+</div>
+</div>
+
+<!-- FOOTER — always at bottom -->
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+
+<script>
+// ── Mall name ──────────────────────────────────────────────────
+const mallName = localStorage.getItem("selectedMallAdmin");
+document.getElementById("mallTitle").textContent = mallName;
+
+const mallSlots = {
+  "Phoenix Mall of the Millennium": 50,
+  "ElPro City Square Mall":         40,
+  "Phoenix Market City Pune":       60,
+  "Amanora Mall":                   40
+};
+
+let bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+
+// ══════════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════════
+const today        = new Date(); today.setHours(0,0,0,0);
+let viewYear       = today.getFullYear();
+let viewMonth      = today.getMonth();
+let selectedDate   = null;
+let monthViewOpen  = false;
+
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+
+function toggleCal() {
+  const popup   = document.getElementById("calPopup");
+  const trigger = document.getElementById("dateTrigger");
+  const isOpen  = popup.classList.contains("show");
+  popup.classList.toggle("show", !isOpen);
+  trigger.classList.toggle("open", !isOpen);
+  if (!isOpen) renderDayView();
+}
+
+// Close on outside click
+document.addEventListener("click", e => {
+  const wrap = document.querySelector(".date-wrap");
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById("calPopup").classList.remove("show");
+    document.getElementById("dateTrigger").classList.remove("open");
+  }
+});
+
+function renderDayView() {
+  document.getElementById("calTitle").textContent = MONTHS[viewMonth] + " " + viewYear;
+  const grid      = document.getElementById("calGrid");
+  grid.innerHTML  = "";
+  const firstDay  = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMon = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  // Empty cells
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement("div");
+    blank.className = "cal-cell empty";
+    grid.appendChild(blank);
+  }
+
+  // Date cells
+  for (let d = 1; d <= daysInMon; d++) {
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const cell     = document.createElement("div");
+    cell.className = "cal-cell";
+    cell.textContent = d;
+
+    const isPast     = cellDate < today;
+    const isToday    = cellDate.getTime() === today.getTime();
+    const isSelected = selectedDate && cellDate.getTime() === selectedDate.getTime();
+
+    if (isPast) {
+      cell.classList.add("disabled");
+    } else {
+      if (isToday)    cell.classList.add("today");
+      if (isSelected) cell.classList.add("selected");
+
+      cell.onclick = () => {
+        selectedDate = cellDate;
+
+        const dd   = String(d).padStart(2, "0");
+        const mm   = String(viewMonth + 1).padStart(2, "0");
+        const displayStr = `${dd} ${MONTHS[viewMonth].slice(0,3)} ${viewYear}`;
+
+        const el = document.getElementById("dateDisplay");
+        el.textContent = displayStr;
+        el.classList.remove("placeholder");
+
+        renderDayView();
+
+        setTimeout(() => {
+          document.getElementById("calPopup").classList.remove("show");
+          document.getElementById("dateTrigger").classList.remove("open");
+        }, 160);
+      };
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  renderDayView();
+}
+
+function toggleMonthView() {
+  monthViewOpen = !monthViewOpen;
+  document.getElementById("dayView").style.display   = monthViewOpen ? "none"  : "block";
+  document.getElementById("monthView").style.display = monthViewOpen ? "block" : "none";
+
+  if (monthViewOpen) {
+    const grid = document.getElementById("monthGrid");
+    grid.innerHTML = "";
+    MONTHS.forEach((m, i) => {
+      const cell = document.createElement("div");
+      cell.className = "month-cell" + (i === viewMonth ? " active" : "");
+      cell.textContent = m.slice(0, 3);
+      cell.onclick = () => {
+        viewMonth     = i;
+        monthViewOpen = false;
+        document.getElementById("dayView").style.display   = "block";
+        document.getElementById("monthView").style.display = "none";
+        renderDayView();
+      };
+      grid.appendChild(cell);
+    });
+  }
+}
+
+// Initial render
+renderDayView();
+
+// ══════════════════════════════════════════════
+//  CHECK SLOTS
+// ══════════════════════════════════════════════
+function checkSlots() {
+  if (!selectedDate) {
+    alert("Please select a date from the calendar");
+    return;
+  }
+
+  const vehicle    = document.getElementById("vehicleType").value;
+  const yyyy       = selectedDate.getFullYear();
+  const mm         = String(selectedDate.getMonth() + 1).padStart(2, "0");
+  const dd         = String(selectedDate.getDate()).padStart(2, "0");
+  const selectedDateStr = `${yyyy}-${mm}-${dd}`;
+
+  const totalSlots = mallSlots[mallName] || 50;
+  bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+
+  const filtered = bookings.filter(b => {
+    const bd = new Date(b.date).toISOString().split("T")[0];
+    return (
+      b.mall?.toLowerCase().trim() === mallName?.toLowerCase().trim() &&
+      bd === selectedDateStr &&
+      b.vehicle === vehicle &&
+      b.status  === "Booked"
+    );
+  });
+
+  const booked    = filtered.length;
+  const available = totalSlots - booked;
+  const pct       = Math.round((booked / totalSlots) * 100);
+
+  // Show summary
+  document.getElementById("summaryRow").style.display = "flex";
+  document.getElementById("summaryRow").innerHTML = `
+    <div class="summary-tile">
+      <div class="num">${totalSlots}</div>
+      <div class="lbl">Total Slots</div>
+    </div>
+    <div class="summary-tile">
+      <div class="num" style="color:var(--red)">${booked}</div>
+      <div class="lbl">Booked</div>
+    </div>
+    <div class="summary-tile">
+      <div class="num" style="color:var(--green-fresh)">${available}</div>
+      <div class="lbl">Available</div>
+    </div>
+    <div class="summary-tile">
+      <div class="num" style="color:var(--gold)">${pct}%</div>
+      <div class="lbl">Occupancy</div>
+    </div>
+  `;
+
+  // Show bookings
+  if (filtered.length === 0) {
+    document.getElementById("bookingArea").innerHTML = `
+      <div class="empty-state">
+        <span class="emoji">🚫</span>
+        <p>No bookings found for this date and vehicle type.</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<div class="section-title">📋 Bookings on this date (${filtered.length})</div>`;
+
+  filtered.forEach(b => {
+    const realIndex = bookings.findIndex(x => x.id === b.id);
+    html += `
+    <div class="booking-admin-card">
+      <div class="booking-info">
+        <strong>🎫 ${b.id}</strong><br>
+        <span>👤 ${b.user || "Unknown"} &nbsp;·&nbsp; 🚗 ${b.vehicle}</span><br>
+        <span>🅿️ Slots: <strong>${(b.slots || []).join(", ")}</strong>
+          &nbsp;·&nbsp; 💰 ₹${b.amount}</span><br>
+        <span>📱 UPI: ${b.userUpi || "—"}</span>
+      </div>
+      <button class="btn btn-danger" onclick="adminCancel(${realIndex})">
+        Cancel Booking
+      </button>
+    </div>`;
+  });
+
+  document.getElementById("bookingArea").innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+//  CANCEL BOOKING
+// ══════════════════════════════════════════════
+function adminCancel(index) {
+  if (!confirm("Cancel this booking?")) return;
+  bookings[index].status       = "Cancelled";
+  bookings[index].cancelReason = "Cancelled by Admin";
+  localStorage.setItem("bookings", JSON.stringify(bookings));
+  showToast("✅ Booking cancelled");
+  checkSlots();
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  window.location.href = "login.html";
+}
+
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.className   = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+</script>
+
+</body>
+</html>

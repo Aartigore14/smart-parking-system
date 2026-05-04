@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Login</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Animated background blobs */
+.bg-blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  animation: float 8s ease-in-out infinite;
+  pointer-events: none;
+}
+.blob1 { width: 400px; height: 400px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+.blob2 { width: 300px; height: 300px; background: var(--accent2); bottom: -80px; right: -80px; animation-delay: 3s; }
+.blob3 { width: 200px; height: 200px; background: var(--gold); top: 50%; left: 60%; animation-delay: 5s; }
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.05); }
+}
+
+.auth-wrap {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-logo .login-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(108,99,255,0.4);
+  box-shadow: 0 0 30px rgba(108,99,255,0.25);
+  display: block;
+  margin: 0 auto 14px;
+}
+
+.auth-logo h1 {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-logo p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+
+/* Tabs */
+.auth-tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 28px;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.25s;
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 15px rgba(108,99,255,0.35);
+}
+
+.auth-section { display: none; }
+.auth-section.active { display: block; }
+
+.input-icon {
+  position: relative;
+}
+
+.input-icon span {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+}
+
+.input-icon input {
+  padding-left: 42px;
+}
+
+.btn-full {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.admin-hint {
+  margin-top: 20px;
+  padding: 14px;
+  background: rgba(255,209,102,0.06);
+  border: 1px solid rgba(255,209,102,0.15);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--gold);
+  text-align: center;
+}
+
+.error-msg {
+  color: var(--red);
+  font-size: 13px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+
+<div class="auth-wrap">
+  <div class="auth-logo">
+    <img src="images/logo.png" alt="Smart Parking Logo" class="login-logo">
+    <h1>Smart Parking</h1>
+    <p>Pune's Smartest Parking System</p>
+  </div>
+
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-section active" id="loginSection">
+      <div class="input-group">
+        <label>Email Address</label>
+        <div class="input-icon">
+          <span>✉️</span>
+          <input type="email" id="loginEmail" placeholder="yourname@gmail.com">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-icon">
+          <span>🔒</span>
+          <input type="password" id="loginPassword" placeholder="Enter password">
+        </div>
+      </div>
+      <p class="error-msg" id="loginError">Invalid email or password</p>
+      <button class="btn btn-primary btn-full" onclick="login()">Sign In →</button>
+      <div class="admin-hint">⚙️ Admin? Use your admin credentials to access the dashboard</div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="auth-section" id="registerSection">
+      <div class="input-group">
+        <label>Gmail Address</label>
+        <div class="input-icon">
+          <span>✉️</span>
+          <input type="email" id="regEmail" placeholder="yourname@gmail.com">
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-icon">
+          <span>🔒</span>
+          <input type="password" id="regPassword" placeholder="Min 6 characters">
+        </div>
+      </div>
+      <p class="error-msg" id="regError">Registration failed</p>
+      <button class="btn btn-gold btn-full" onclick="register()">Create Account →</button>
+    </div>
+  </div>
+</div>
+<!-- <footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer> -->
+<script>
+const ADMIN_EMAIL = "aarti123gore@gmail.com";
+const ADMIN_PASSWORD = "Aarti@123";
+
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+  });
+  document.getElementById('loginSection').classList.toggle('active', tab === 'login');
+  document.getElementById('registerSection').classList.toggle('active', tab === 'register');
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function register() {
+  const email = document.getElementById("regEmail").value.trim();
+  const password = document.getElementById("regPassword").value;
+  if (!email.endsWith("@gmail.com")) return showError('regError', 'Only @gmail.com allowed');
+  if (email === ADMIN_EMAIL) return showError('regError', 'Email reserved for Admin');
+  if (password.length < 6) return showError('regError', 'Password must be 6+ characters');
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+  if (users.find(u => u.email === email)) return showError('regError', 'Email already registered');
+  users.push({ email, password, role: "user" });
+  localStorage.setItem("users", JSON.stringify(users));
+  showToast('✅ Registered! Please sign in.');
+  setTimeout(() => switchTab('login'), 1500);
+}
+
+function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    localStorage.setItem("currentUser", email);
+    localStorage.setItem("role", "admin");
+    window.location.href = "admin.html";
+    return;
+  }
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const user = users.find(u => u.email === email && u.password === password);
+  if (user) {
+    localStorage.setItem("currentUser", email);
+    localStorage.setItem("role", "user");
+    window.location.href = "home.html";
+  } else {
+    showError('loginError', 'Invalid email or password');
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const active = document.querySelector('.auth-section.active').id;
+    active === 'loginSection' ? login() : register();
+  }
+});
+</script>
+</body>
+</html>

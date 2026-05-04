@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking — Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.stat-tile::before {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  opacity: 0.08;
+}
+
+.stat-tile:nth-child(1)::before { background: var(--accent); }
+.stat-tile:nth-child(2)::before { background: var(--green); }
+.stat-tile:nth-child(3)::before { background: var(--red); }
+.stat-tile:nth-child(4)::before { background: var(--gold); }
+
+.stat-tile:hover {
+  transform: translateY(-5px);
+  border-color: rgba(108,99,255,0.3);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+
+.tile-icon { font-size: 28px; margin-bottom: 12px; }
+.tile-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tile-label { font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Mall Cards */
+.malls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+.mall-admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.mall-admin-card:hover {
+  border-color: rgba(108,99,255,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+.mall-admin-card h3 { font-size: 15px; margin-bottom: 14px; }
+
+.mall-bar-wrap {
+  margin-bottom: 14px;
+}
+
+.mall-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.mall-bar-bg {
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.mall-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.6s ease;
+}
+
+.mall-stats-row {
+  display: flex;
+  gap: 10px;
+}
+
+.mall-stat {
+  flex: 1;
+  text-align: center;
+  background: var(--surface2);
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.mall-stat .n { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; }
+.mall-stat .l { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* User / Booking Cards */
+.data-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.data-card:hover { border-color: rgba(108,99,255,0.25); }
+
+.data-card .left { font-size: 14px; line-height: 1.8; }
+.data-card .left strong { color: var(--text); }
+.data-card .left span { color: var(--muted); }
+
+.admin-role-pill {
+  background: rgba(255,209,102,0.1);
+  border: 1px solid rgba(255,209,102,0.25);
+  color: var(--gold);
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+</style>
+</head>
+<body>
+
+<script>
+  if (localStorage.getItem("role") !== "admin") window.location.href = "login.html";
+</script>
+
+<nav class="navbar">
+  <a class="logo" href="#"><img src="images/logo.png" alt="Logo"><span>SmartPark Admin</span></a>
+  <div class="navbar-actions">
+    <span class="admin-role-pill">⚙️ Admin</span>
+    <button class="btn btn-danger" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div style="margin-bottom:32px;">
+    <h2 style="font-size:30px; font-weight:800;">Dashboard</h2>
+    <p style="color:var(--muted); font-size:14px; margin-top:4px;">Overview of all parking activity</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="admin-grid" id="statsGrid"></div>
+
+  <!-- Mall Overview -->
+  <div class="section-title">🏢 Mall Occupancy</div>
+  <div class="malls-grid" id="mallGrid"></div>
+
+  <!-- Registered Users -->
+  <div class="section-title">👤 Registered Users</div>
+  <div id="userList" style="margin-bottom:40px;"></div>
+
+  <!-- Cancelled Bookings -->
+  <div class="section-title">❌ Cancelled Bookings</div>
+  <div id="cancelList"></div>
+
+</div>
+<footer class="footer">
+  Developed by <span>Aarti Gore</span> &copy; 2026
+</footer>
+<script>
+const bookings = JSON.parse(localStorage.getItem("bookings")) || [];
+const users = JSON.parse(localStorage.getItem("users")) || [];
+
+const malls = [
+  { name: "Phoenix Mall of the Millennium", totalSlots: 50, icon: "🏙️" },
+  { name: "ElPro City Square Mall", totalSlots: 40, icon: "🏬" },
+  { name: "Phoenix Market City Pune", totalSlots: 60, icon: "🅿️" },
+  { name: "Amanora Mall", totalSlots: 40, icon: "🌟" }
+];
+
+// Stats
+const totalBookings = bookings.length;
+const activeBookings = bookings.filter(b => b.status === "Booked").length;
+const cancelledBookings = bookings.filter(b => b.status === "Cancelled").length;
+const totalRevenue = bookings.filter(b => b.status === "Booked").reduce((s, b) => s + (b.amount || 0), 0);
+
+document.getElementById("statsGrid").innerHTML = `
+  <div class="stat-tile"><div class="tile-icon">🎫</div><div class="tile-num">${totalBookings}</div><div class="tile-label">Total Bookings</div></div>
+  <div class="stat-tile"><div class="tile-icon">✅</div><div class="tile-num">${activeBookings}</div><div class="tile-label">Active Bookings</div></div>
+  <div class="stat-tile"><div class="tile-icon">❌</div><div class="tile-num">${cancelledBookings}</div><div class="tile-label">Cancelled</div></div>
+  <div class="stat-tile"><div class="tile-icon">💰</div><div class="tile-num">₹${totalRevenue}</div><div class="tile-label">Total Revenue</div></div>
+`;
+
+// Malls
+let mallHTML = "";
+malls.forEach(mall => {
+  const booked = bookings.filter(b => b.mall === mall.name && b.status === "Booked").length;
+  const available = mall.totalSlots - booked;
+  const pct = Math.round((booked / mall.totalSlots) * 100);
+
+  mallHTML += `
+  <div class="mall-admin-card" onclick="openMall('${mall.name}')">
+    <h3>${mall.icon} ${mall.name}</h3>
+    <div class="mall-bar-wrap">
+      <div class="mall-bar-label"><span>Occupancy</span><span>${pct}%</span></div>
+      <div class="mall-bar-bg"><div class="mall-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="mall-stats-row">
+      <div class="mall-stat"><div class="n">${mall.totalSlots}</div><div class="l">Total</div></div>
+      <div class="mall-stat"><div class="n" style="color:var(--red)">${booked}</div><div class="l">Booked</div></div>
+      <div class="mall-stat"><div class="n" style="color:var(--green)">${available}</div><div class="l">Available</div></div>
+    </div>
+  </div>`;
+});
+document.getElementById("mallGrid").innerHTML = mallHTML;
+
+// Users
+let userHTML = "";
+users.forEach(u => {
+  userHTML += `
+  <div class="data-card">
+    <div class="left">
+      <strong>✉️ ${u.email}</strong><br>
+      <span>Registered User</span>
+    </div>
+    <span class="badge badge-purple">User</span>
+  </div>`;
+});
+document.getElementById("userList").innerHTML = userHTML || `<div style="color:var(--muted);padding:20px;">No registered users yet.</div>`;
+
+// Cancelled
+let cancelHTML = "";
+bookings.filter(b => b.status === "Cancelled").forEach(b => {
+  cancelHTML += `
+  <div class="data-card" style="border-color:rgba(239,35,60,0.15);">
+    <div class="left">
+      <strong>${b.id}</strong> · <span>${b.user}</span><br>
+      <span>${b.mall} · ${b.date} · ₹${b.amount}</span><br>
+      <span>Reason: ${b.cancelReason || "—"} · UPI: ${b.userUpi || "—"}</span>
+    </div>
+    <span class="badge badge-red">Cancelled</span>
+  </div>`;
+});
+document.getElementById("cancelList").innerHTML = cancelHTML || `<div style="color:var(--muted);padding:20px;">No cancelled bookings.</div>`;
+
+function openMall(name) {
+  localStorage.setItem("selectedMallAdmin", name);
+  window.location.href = "mall-details.html";
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  window.location.href = "login.html";
+}
+</script>
+</body>
+</html>
